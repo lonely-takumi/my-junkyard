@@ -1,0 +1,110 @@
+name: Automated Code Review
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    name: Automated Code Review
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Code Quality Analysis with Super-Linter
+      uses: github/super-linter@v5
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_ALL_CODEBASE: false
+        SUPPRESS_POSSUM: true
+        VALIDATE_MARKDOWN: true
+        VALIDATE_YAML: true
+        VALIDATE_JSON: true
+        VALIDATE_XML: true
+        VALIDATE_DOCKERFILE: true
+        VALIDATE_BASH: true
+        VALIDATE_PYTHON: true
+        VALIDATE_JAVASCRIPT: true
+        VALIDATE_TYPESCRIPT: true
+        VALIDATE_CSS: true
+        VALIDATE_HTML: true
+        VALIDATE_GO: true
+        VALIDATE_JAVA: true
+        VALIDATE_PHP: true
+        VALIDATE_RUBY: true
+        VALIDATE_RUST: true
+        VALIDATE_SQL: true
+        
+    - name: Security Scan with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+    - name: Comment on PR with review summary
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Check if there are any issues to report
+          let comment = '## 🤖 Automated Code Review Summary\n\n';
+          
+          // Add timestamp
+          comment += `**Review completed at:** ${new Date().toISOString()}\n\n`;
+          
+          // Check for common file types and provide suggestions
+          const { data: files } = await github.rest.pulls.listFiles({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number,
+          });
+          
+          if (files.length > 0) {
+            comment += '### 📁 Files Changed\n';
+            files.forEach(file => {
+              comment += `- \`${file.filename}\` (+${file.additions}/-${file.deletions})\n`;
+            });
+            comment += '\n';
+          }
+          
+          comment += '### ✅ Automated Checks Completed\n';
+          comment += '- ✅ Super-Linter code quality validation\n';
+          comment += '- ✅ Security scan with Trivy\n';
+          comment += '- ✅ Multi-language analysis\n\n';
+          
+          comment += '### 💡 General Recommendations\n';
+          comment += '- Ensure all new code includes appropriate comments\n';
+          comment += '- Verify that any secrets or sensitive data are not committed\n';
+          comment += '- Consider adding tests for new functionality\n';
+          comment += '- Review the Security tab for any security findings\n\n';
+          
+          comment += '_This review was automatically generated. Please review the Actions logs for detailed results._';
+          
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
