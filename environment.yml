@@ -1,0 +1,8 @@
+name: my-junkyard
+channels:
+  - defaults
+dependencies:
+  - python=3.13
+  - pip
+  - pip:
+      - pymupdf==1.26.3
