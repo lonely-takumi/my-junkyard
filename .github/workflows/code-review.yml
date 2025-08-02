@@ -10,6 +10,12 @@ on:
       - main
       - master
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  security-events: write
+
 jobs:
   code-review:
     runs-on: ubuntu-latest
