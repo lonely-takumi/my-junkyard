@@ -3,6 +3,9 @@ channels:
   - defaults
 dependencies:
   - python=3.13
+  - conda-forge::pydantic
+  - anaconda::requests
+  - conda-forge::python-dotenv
   - pip
   - pip:
       - pymupdf==1.26.3
