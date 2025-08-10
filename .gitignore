@@ -49,5 +49,4 @@ temp/
 src/pdf-selected-page-cutter/output/
 src/pdf-selected-page-cutter/*.pdf
 
-# message-dispatcher
-src/message-dispatcher/utils/.env
+.env
