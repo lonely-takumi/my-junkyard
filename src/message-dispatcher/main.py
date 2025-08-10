@@ -1,19 +1,23 @@
-import argparse
-from dto.message_data_transfer_object import (
-  MessageDataTransferObject
-)
-from notifier.slack import SlackNotifier
+from dto.dto_factory import DataTransferObjectFactory
+from notifier.notifier_factory import NotifierFactory
 
 def main():
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--token", required=False)
-  parser.add_argument("--message", required=True)
-  args = parser.parse_args()
+  appName = "slack"
 
-  validatedData = MessageDataTransferObject(**args.__dict__)
+  dataModel = DataTransferObjectFactory.create_dto(appName)
+  validatedData = dataModel(**
+    {
+      "text": "test"
+    }
+  )
+  
+  variables = {
+    "validated": validatedData,
+    "appName": appName
+  }
 
-  notifier = SlackNotifier()
-  notifier.send(validatedData)
+  notifier = NotifierFactory.get_notifier(**variables)
+  notifier.send()
   print("Message sent successfully")
   
 if __name__ == "__main__":
